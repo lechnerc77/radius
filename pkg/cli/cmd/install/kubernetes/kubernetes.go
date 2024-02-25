@@ -18,6 +18,8 @@ package kubernetes
 
 import (
 	"context"
+	"runtime"
+	"strings"
 
 	"github.com/radius-project/radius/pkg/cli/cmd/commonflags"
 	"github.com/radius-project/radius/pkg/cli/framework"
@@ -115,6 +117,8 @@ func (r *Runner) Run(ctx context.Context) error {
 		},
 	}
 
+	cliOptions.Radius.SetFileArgs = adjustFilePathForOs(cliOptions.Radius.SetFileArgs)
+
 	state, err := r.Helm.CheckRadiusInstall(r.KubeContext)
 	if err != nil {
 		return err
@@ -139,4 +143,29 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func adjustFilePathForOs(paths []string) []string {
+
+	if len(paths) == 0 {
+		return paths
+	}
+
+	// check if slice called path has entries and if the OS is Windows
+	if runtime.GOOS == "windows" {
+		var adjustedPaths []string
+
+		// Iterate over the slice and adjust the path to Windows format
+		for _, p := range paths {
+			// Make sure that path is in the correct format
+			// Adjust the path for Windows
+			p = strings.ReplaceAll(p, "\\", "\\\\")
+			adjustedPaths = append(adjustedPaths, p)
+		}
+		return adjustedPaths
+	} else {
+		// If the OS is not Windows, return the original slice
+		return paths
+	}
+
 }
